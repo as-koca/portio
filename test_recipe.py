@@ -3,7 +3,14 @@
 import unittest
 from dataclasses import replace
 
-from recipe import EXAMPLE_RECIPE, scale_recipe, scale_to_servings
+from recipe import (
+    EXAMPLE_RECIPE,
+    Ingredient,
+    Recipe,
+    scale_by_ingredient,
+    scale_recipe,
+    scale_to_servings,
+)
 
 
 def quantities(recipe):
@@ -62,6 +69,61 @@ class ScaleRecipeTest(unittest.TestCase):
             with self.subTest(factor=bad):
                 with self.assertRaises(ValueError):
                     scale_recipe(EXAMPLE_RECIPE, bad)
+
+
+class ScaleByIngredientTest(unittest.TestCase):
+    def test_butter_200_to_150(self):
+        scaled = scale_by_ingredient(EXAMPLE_RECIPE, "butter", 150)
+        self.assertAlmostEqual(scaled.servings, 3)
+        for got, want in zip(quantities(scaled), [150, 225, 75, 0.75]):
+            self.assertAlmostEqual(got, want)
+
+    def test_fractional_servings(self):
+        scaled = scale_by_ingredient(EXAMPLE_RECIPE, "butter", 170)
+        self.assertAlmostEqual(scaled.servings, 3.4)
+
+    def test_scale_up_by_egg(self):
+        scaled = scale_by_ingredient(EXAMPLE_RECIPE, "egg", 2)
+        self.assertAlmostEqual(scaled.servings, 8)
+        for got, want in zip(quantities(scaled), [400, 600, 200, 2]):
+            self.assertAlmostEqual(got, want)
+
+    def test_chosen_ingredient_is_exact(self):
+        # 200 * (7 / 200) == 7.000000000000001 in floating point; the
+        # ingredient the user set must still be exactly 7.
+        scaled = scale_by_ingredient(EXAMPLE_RECIPE, "butter", 7)
+        self.assertEqual(scaled.ingredients[0].quantity, 7)
+
+    def test_name_is_case_insensitive(self):
+        for name in ("Butter", "BUTTER", "bUtTeR"):
+            with self.subTest(name=name):
+                scaled = scale_by_ingredient(EXAMPLE_RECIPE, name, 150)
+                self.assertEqual(scaled.ingredients[0].quantity, 150)
+
+    def test_original_is_unchanged(self):
+        before = quantities(EXAMPLE_RECIPE)
+        scale_by_ingredient(EXAMPLE_RECIPE, "butter", 150)
+        self.assertEqual(quantities(EXAMPLE_RECIPE), before)
+        self.assertEqual(EXAMPLE_RECIPE.servings, 4)
+
+    def test_unknown_ingredient_raises(self):
+        with self.assertRaises(ValueError):
+            scale_by_ingredient(EXAMPLE_RECIPE, "chocolate", 50)
+
+    def test_old_quantity_zero_raises(self):
+        recipe = Recipe(
+            name="Salted",
+            servings=2,
+            ingredients=(Ingredient("salt", 0, "g"), Ingredient("flour", 100, "g")),
+        )
+        with self.assertRaises(ValueError):
+            scale_by_ingredient(recipe, "salt", 5)
+
+    def test_new_quantity_zero_or_negative_raises(self):
+        for bad in (0, -50):
+            with self.subTest(new_quantity=bad):
+                with self.assertRaises(ValueError):
+                    scale_by_ingredient(EXAMPLE_RECIPE, "butter", bad)
 
 
 if __name__ == "__main__":

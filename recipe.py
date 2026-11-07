@@ -1,4 +1,5 @@
-"""Recipe data model and scaling: a recipe with base servings and ingredients."""
+"""Recipe data model and scaling:
+a recipe with base servings and ingredients."""
 
 from dataclasses import dataclass, replace
 
@@ -35,7 +36,8 @@ EXAMPLE_RECIPE = Recipe(
 
 
 def scale_recipe(recipe: Recipe, factor: float) -> Recipe:
-    """Return a new recipe with servings and every quantity multiplied by factor.
+    """Return a new recipe with servings and every quantity multiplied
+    by factor.
 
     This is the single scaling mechanism; scaling by servings or by one
     ingredient only differs in how the factor is computed.
@@ -61,6 +63,45 @@ def scale_to_servings(recipe: Recipe, new_servings: float) -> Recipe:
     # pick up float error once servings are fractional
     # (e.g. 0.7 * (3 / 0.7) == 2.9999999999999996).
     return replace(scaled, servings=new_servings)
+
+
+def scale_by_ingredient(
+    recipe: Recipe, ingredient_name: str, new_quantity: float
+) -> Recipe:
+    """Return a new recipe scaled so ingredient_name has new_quantity.
+
+    Every other ingredient (and servings) scales by the same ratio,
+    new_quantity / old_quantity. Name matching ignores case.
+    """
+    # casefold() is a stronger lower():
+    # it also matches e.g. German "ß" with "ss".
+    wanted = ingredient_name.casefold()
+    # First match wins if two ingredients share a name.
+    index = next(
+        (i for i, ing in enumerate(recipe.ingredients)
+         if ing.name.casefold() == wanted),
+        None,
+    )
+    if index is None:
+        available = ", ".join(ing.name for ing in recipe.ingredients)
+        raise ValueError(
+            f"no ingredient named {ingredient_name!r}; available: {available}"
+        )
+
+    old_quantity = recipe.ingredients[index].quantity
+    if old_quantity == 0:
+        raise ValueError(
+            f"cannot scale by {ingredient_name!r}: its quantity is 0, "
+            "so there is no ratio to compute"
+        )
+
+    # A new_quantity <= 0 gives factor <= 0, which scale_recipe rejects.
+    scaled = scale_recipe(recipe, new_quantity / old_quantity)
+    # Same float-safety trick as scale_to_servings: the ingredient the user
+    # set must come out exactly as typed (150, not 150.00000000000003).
+    ingredients = list(scaled.ingredients)
+    ingredients[index] = replace(ingredients[index], quantity=new_quantity)
+    return replace(scaled, ingredients=tuple(ingredients))
 
 
 def format_recipe(recipe: Recipe) -> str:
