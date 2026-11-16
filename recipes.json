@@ -1,0 +1,30 @@
+{
+  "recipes": [
+    {
+      "name": "Shortbread",
+      "servings": 4,
+      "ingredients": [
+        {
+          "name": "butter",
+          "quantity": 200,
+          "unit": "g"
+        },
+        {
+          "name": "flour",
+          "quantity": 300,
+          "unit": "g"
+        },
+        {
+          "name": "sugar",
+          "quantity": 100,
+          "unit": "g"
+        },
+        {
+          "name": "egg",
+          "quantity": 1,
+          "unit": "pieces"
+        }
+      ]
+    }
+  ]
+}
