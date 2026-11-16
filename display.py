@@ -111,9 +111,14 @@ def format_ingredient(ing: Ingredient) -> str:
     return line
 
 
+def format_servings(servings: float) -> str:
+    """Return servings as display text, at most 1 decimal: 3.4, 4."""
+    return _strip_zeros(_round_half_up(servings, "0.1"))
+
+
 def format_recipe(recipe: Recipe) -> str:
     """Return a human-readable text version of the recipe."""
-    servings = _strip_zeros(_round_half_up(recipe.servings, "0.1"))
+    servings = format_servings(recipe.servings)
     lines = [f"{recipe.name} (serves {servings})"]
     for ing in recipe.ingredients:
         lines.append(f"  - {format_ingredient(ing)}")
