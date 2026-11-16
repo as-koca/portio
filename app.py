@@ -12,7 +12,12 @@ from pathlib import Path
 from flask import Flask, jsonify, request
 from flask.typing import ResponseReturnValue
 
-from display import format_ingredient, format_servings
+from display import (
+    format_amount,
+    format_ingredient,
+    format_label,
+    format_servings,
+)
 from recipe import Recipe, scale_by_ingredient, scale_to_servings
 from storage import find_recipe, load_book, recipe_names
 
@@ -22,9 +27,10 @@ DEFAULT_BOOK = Path(__file__).parent / "recipes.json"
 def _recipe_to_api(recipe: Recipe) -> dict[str, object]:
     """Recipe as JSON for the page.
 
-    Each value comes twice: the raw number (for input fields) and the
-    display text from display.py, so rounding and plural rules live in
-    Python only and the page never re-implements them.
+    Each ingredient comes with its raw quantity plus display text from
+    display.py: "amount" (rounded, for the input box), "label" (the rest of
+    the line) and "display" (the whole line). Rounding and plural rules
+    live in Python only; the page never re-implements them.
     """
     return {
         "name": recipe.name,
@@ -35,6 +41,8 @@ def _recipe_to_api(recipe: Recipe) -> dict[str, object]:
                 "name": ing.name,
                 "quantity": ing.quantity,
                 "unit": ing.unit,
+                "amount": format_amount(ing.quantity, ing.unit),
+                "label": format_label(ing),
                 "display": format_ingredient(ing),
             }
             for ing in recipe.ingredients
@@ -86,6 +94,11 @@ def create_app(book_path: str | Path = DEFAULT_BOOK) -> Flask:
     """
     app = Flask(__name__)
     book = load_book(book_path)
+
+    @app.get("/")
+    def index() -> ResponseReturnValue:
+        # The page is static; it gets all its data from the API below.
+        return app.send_static_file("index.html")
 
     # GET for everything: nothing changes on the server, and a scaled
     # recipe gets a URL that can be bookmarked or shared.

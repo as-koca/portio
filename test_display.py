@@ -5,6 +5,7 @@ import unittest
 from display import (
     format_amount,
     format_ingredient,
+    format_label,
     format_recipe,
     pluralize,
 )
@@ -127,6 +128,18 @@ class FormatIngredientTest(unittest.TestCase):
     def test_explicit_plural_not_used_for_one(self) -> None:
         ing = Ingredient("bay leaf", 1, "pieces", plural="bay leaves")
         self.assertEqual(format_ingredient(ing), "1 bay leaf")
+
+
+class FormatLabelTest(unittest.TestCase):
+    def test_label_is_line_without_amount(self) -> None:
+        cases = [
+            (Ingredient("butter", 337.5, "g"), "g butter"),
+            (Ingredient("egg", 1, "pieces"), "egg"),
+            (Ingredient("egg", 1.5, "pieces"), "eggs (≈ 2)"),
+        ]
+        for ing, want in cases:
+            with self.subTest(ing=ing):
+                self.assertEqual(format_label(ing), want)
 
 
 class FormatRecipeTest(unittest.TestCase):

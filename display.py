@@ -92,8 +92,18 @@ def pluralize(name: str) -> str:
 def format_ingredient(ing: Ingredient) -> str:
     """Return one ingredient line, e.g. "338 g butter" or "1.5 eggs (≈ 2)"."""
     amount = format_amount(ing.quantity, ing.unit)
+    return f"{amount} {format_label(ing)}"
+
+
+def format_label(ing: Ingredient) -> str:
+    """Return the line after the amount: "g butter", "eggs (≈ 2)".
+
+    Separate from format_ingredient so the web page can show the amount
+    in an input box next to it without repeating it.
+    """
+    amount = format_amount(ing.quantity, ing.unit)
     if ing.unit != COUNTABLE_UNIT:
-        return f"{amount} {ing.unit} {ing.name}"
+        return f"{ing.unit} {ing.name}"
 
     # Decide singular/plural from what is *displayed*: 0.999 shows as "1",
     # so it should read "1 egg", not "1 eggs".
@@ -101,14 +111,13 @@ def format_ingredient(ing: Ingredient) -> str:
         label = ing.name
     else:
         label = ing.plural or pluralize(ing.name)
-    line = f"{amount} {label}"
 
     # You can't crack 1.5 eggs: add a whole-number hint when not whole.
     if "." in amount:
         # At least 1: if it's in the recipe, "≈ 0 eggs" would be misleading.
         hint = max(_round_half_up(ing.quantity, "1"), 1)
-        line += f" (≈ {hint})"
-    return line
+        label += f" (≈ {hint})"
+    return label
 
 
 def format_servings(servings: float) -> str:

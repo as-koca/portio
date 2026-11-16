@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recipe Scaler</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <!-- defer: run after the page is parsed, so app.js can find elements -->
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <header>
+    <h1>Recipe Scaler</h1>
+  </header>
+
+  <div class="layout">
+    <nav aria-label="Recipes">
+      <h2>Recipes</h2>
+      <ul id="recipe-list"></ul>
+    </nav>
+
+    <main>
+      <p id="error" class="error" role="alert" hidden></p>
+      <p id="placeholder" class="placeholder">Pick a recipe to start.</p>
+
+      <section id="recipe" hidden>
+        <h2 id="recipe-name"></h2>
+
+        <div class="servings">
+          <label for="servings">Servings</label>
+          <button type="button" id="servings-minus"
+                  aria-label="Fewer servings">−</button>
+          <input id="servings" type="number" min="0" step="any"
+                 inputmode="decimal">
+          <button type="button" id="servings-plus"
+                  aria-label="More servings">+</button>
+          <button type="button" id="reset" class="reset">Reset</button>
+        </div>
+
+        <p class="hint">Change any amount: everything else follows.</p>
+
+        <table>
+          <tbody id="ingredients"></tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

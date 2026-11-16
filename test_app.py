@@ -43,6 +43,21 @@ class ApiTestCase(unittest.TestCase):
         self.assertIn(message, body["error"])
 
 
+class PageTest(ApiTestCase):
+    def test_index_serves_the_page(self) -> None:
+        response = self.client.get("/")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"<title>Recipe Scaler</title>", response.data)
+        response.close()  # static files are streamed; close the handle
+
+    def test_static_files_are_served(self) -> None:
+        for path in ("/static/app.js", "/static/style.css"):
+            with self.subTest(path=path):
+                response = self.client.get(path)
+                self.assertEqual(response.status_code, 200)
+                response.close()
+
+
 class ListTest(ApiTestCase):
     def test_lists_names_in_file_order(self) -> None:
         body = self.get_ok("/api/recipes")
@@ -61,6 +76,8 @@ class GetRecipeTest(ApiTestCase):
                 "name": "butter",
                 "quantity": 200,
                 "unit": "g",
+                "amount": "200",
+                "label": "g butter",
                 "display": "200 g butter",
             },
         )
@@ -79,7 +96,11 @@ class ScaleTest(ApiTestCase):
         body = self.get_ok("/api/recipes/Shortbread?servings=6")
         self.assertEqual(body["servings"], 6)
         self.assertEqual(body["ingredients"][0]["quantity"], 300)
-        self.assertEqual(body["ingredients"][3]["display"], "1.5 eggs (≈ 2)")
+        egg = body["ingredients"][3]
+        self.assertEqual(egg["display"], "1.5 eggs (≈ 2)")
+        # amount + label split the same line for the page's input boxes
+        self.assertEqual(egg["amount"], "1.5")
+        self.assertEqual(egg["label"], "eggs (≈ 2)")
 
     def test_by_ingredient(self) -> None:
         body = self.get_ok(
